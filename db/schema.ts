@@ -4,8 +4,11 @@ import {
   primaryKey,
   integer,
   pgTableCreator,
+  serial,
+  varchar,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccount } from "@auth/core/adapters";
+import { relations } from "drizzle-orm";
 
 export const createTable = pgTableCreator((name) => `post_${name}`);
 
@@ -16,6 +19,10 @@ export const users = createTable("user", {
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
 });
+
+export const userRelations = relations(users, ({ many }) => ({
+  posts: many(posts),
+}));
 
 export const accounts = createTable(
   "account",
@@ -60,3 +67,14 @@ export const verificationTokens = createTable(
     compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
   })
 );
+
+export const posts = createTable("post", {
+  id: serial('id').primaryKey(),
+  authorId: text('author_id').references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 256 }),
+  text: text('text'),
+});
+
+export const postRelations = relations(posts, ({ one }) => ({
+  author: one(users, { fields: [posts.authorId], references: [users.id] })
+}));
